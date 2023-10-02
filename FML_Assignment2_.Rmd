@@ -1,0 +1,149 @@
+---
+title: "FML_A2"
+author: "Sushma"
+date: "2023-10-01"
+output:
+  word_document: default
+  html_document: default
+  pdf_document: default
+---
+
+```{r}
+library(class)
+library(dplyr)
+# Load the caret package
+library(caret)
+```
+
+```{r}
+# Load the dataset
+data <- read.csv("C:/Users/niyas/Downloads/UniversalBank.csv")
+mydata <- read.csv("C:/Users/niyas/Downloads/UniversalBank.csv")
+
+# Display the structure of the dataset
+str(data)
+
+# Summary of the data given
+summary(mydata)
+```
+```{r}
+## Structure of given data which is "mydata"
+str(mydata)
+```
+```{R}
+## a.Consider the following customer: Age = 40, Experience = 10, Income = 84, Family = 2, CCAvg = 2, Education_1 = 0, Education_2 = 1, Education_3 = 0, Mortgage = 0, Securities Account = 0, CD Account = 0, Online = 1, and Credit Card = 1. Perform a k-NN classification with all predictors except ID and ZIP code using k = 1. Remember to transform categorical predictors with more than two categories into dummy variables first. Specify the success class as 1 (loan acceptance), and use the default cutoff value of 0.5. How would this customer be classified?
+
+# Transform categorical predictors into dummy variables by conversion of Education to a factor.
+mydata$Education = as.factor(mydata$Education)
+
+# Exclude 'ID' and 'ZIP code' from dataset and transforming the categorical predictors "Education" with more than two categories into dummy variables
+# Create a formula to include all columns except ZIP.Code and ID
+formula <- as.formula(paste("~ .", paste0("-ZIP.Code", "-ID")))
+
+# Create dummy variables
+mydata_dummy <- as.data.frame(model.matrix(formula, data = mydata))
+head(mydata_dummy)
+```
+
+```{r}
+#Converting Personal.Loan to a factor present in the dataset 'bank_dummy'
+mydata_dummy$Personal.Loan = as.factor(mydata_dummy$Personal.Loan)
+
+#Setting set.seed as 3.14 before we partition the data
+set.seed(3.14)
+
+#We divide the data into validation set and training set.
+train.index <- sample(row.names(mydata_dummy), 0.6*dim(mydata_dummy)[1]) 
+test.index <- setdiff(row.names(mydata_dummy), train.index) 
+train_data <- mydata_dummy[train.index, ]
+valid_data <- mydata_dummy[test.index, ]
+
+#Classifying the given customer
+Given_CusData = data.frame(Age=40 , Experience=10, Income = 84, Family = 2, CCAvg = 2, Education1 = 0, Education2 = 1, Education3 = 0, Mortgage = 0, Securities.Account = 0, CD.Account = 0, Online = 1,  CreditCard = 1, stringsAsFactors = FALSE)
+Given_CusData
+```
+```{r}
+# Check the structure and column names of Given_CusData
+str(Given_CusData)
+colnames(Given_CusData)
+```
+
+```{r}
+
+##  Training and Validation Data:
+norm_values <- preProcess(train_data[, -c(10)], method = c("center", "scale"))
+train_data_processed <- predict(norm_values, train_data[, -c(10)])
+valid_data_processed <- predict(norm_values, valid_data[, -c(10)])
+
+# Create a copy of Given_CusData with appropriate column names
+Given_CusData_processed <- Given_CusData
+colnames(Given_CusData_processed) <- colnames(train_data_processed)
+
+## k-NN Classification along with attributes:
+knn.1 <- knn(train = train_data_processed, test = Given_CusData_processed, cl = train_data[, 10], k = 5, prob = TRUE)
+knn.attributes <- attributes(knn.1)
+
+knn.attributes[1]
+```
+```{r}
+knn.attributes[3]
+```
+
+```{r}
+## 2.What is a choice of k that balances between overfitting and ignoring the predictor information? The best choice of k which also balances the model from overfitting is k = 3
+
+my_accurateChoice <- data.frame(k = seq(1, 14, 1), accuracy = rep(0, 14))
+
+for(i in 1:14) {
+  test1 <- knn(train = train_data[,-10],test = valid_data[,-10], cl = train_data[,10], k=i, prob=TRUE)
+  my_accurateChoice[i, 2] <- confusionMatrix(test1, valid_data[,10])$overall[1]
+}
+my_accurateChoice
+```
+
+```{r}
+## 3.Show the confusion matrix for the validation data that results from using the best k.
+
+test2 <- knn(train = train_data[,-10],test = valid_data[,-10], cl = train_data[,10], k=3, prob=TRUE)
+confusionMatrix(test2, valid_data[,10])
+```
+```{r}
+# 4.Consider the following customer: Age = 40, Experience = 10, Income = 84, Family = 2, CCAvg = 2, Education_1 = 0, Education_2 = 1, Education_3 = 0, Mortgage = 0, Securities Account = 0, CD Account = 0, Online = 1 and Credit Card = 1. Classify the customer using the best k.
+
+Given_CusData2= data.frame(Age = 40, Experience = 10, Income = 84, Family = 2, CCAvg = 2, Education_1 = 0, Education_2 = 1, Education_3 = 0, Mortgage = 0, Securities.Account = 0, CD.Account = 0, Online = 1, CreditCard = 1)
+my_knn <- knn(train = train_data[,-10],test = Given_CusData2, cl = train_data[,10], k=3, prob=TRUE)
+my_knn
+```
+```{r}
+## 5. Repartition the data, this time into training, validation, and test sets (50% : 30% : 20%). Apply the k-NN method with the k chosen above. Compare the confusion matrix of the test set with that of the training and validation sets. Comment on the differences and their reason.
+
+set.seed(3.14)
+train.index <- sample(rownames(mydata_dummy), 0.5*dim(mydata_dummy)[1])
+valid.index <- sample(setdiff(rownames(mydata_dummy),train.index), 0.3*dim(mydata_dummy)[1])
+test.index = setdiff(rownames(mydata_dummy), union(train.index, valid.index))
+
+train_data<- mydata_dummy[train.index, ]
+valid_data <- mydata_dummy[valid.index, ]
+test_data <- mydata_dummy[test.index, ]
+
+norm.values <- preProcess(train_data[, -c(10)], method=c("center", "scale"))
+train_data[, -c(10)] <- predict(norm.values, train_data[, -c(10)])
+valid_data[, -c(10)] <- predict(norm.values, valid_data[, -c(10)])
+test_data[,-c(10)] <- predict(norm.values, test_data[,-c(10)])
+
+test_data1 <- knn(train = train_data[,-c(10)],test = test_data[,-c(10)], cl = train_data[,10], k=3, prob=TRUE)
+valid_data1 <- knn(train = train_data[,-c(10)],test = valid_data[,-c(10)], cl = train_data[,10], k=3, prob=TRUE)
+train_data1 <- knn(train = train_data[,-c(10)],test = train_data[,-c(10)], cl = train_data[,10], k=3, prob=TRUE)
+
+confusionMatrix(test_data1, test_data[,10])
+```
+
+```{r}
+confusionMatrix(valid_data1, valid_data[,10])
+```
+
+```{r}
+confusionMatrix(train_data1, train_data[,10])
+```
+
+
