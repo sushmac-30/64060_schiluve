@@ -1,0 +1,156 @@
+---
+title: "FML Assign4"
+author: "Sushma"
+date: "2023-10-27"
+output:
+  word_document: default
+  html_document: default
+  pdf_document: default
+---
+
+```{r}
+##Load the librabries
+
+library(factoextra)
+library(ggplot2)
+library(tidyverse)
+library(ISLR)
+library(NbClust)
+library(cluster)
+
+```
+
+
+```{r}
+## Import the data from csv file.
+
+Pharmaceuticals <- read.csv("C:/Users/niyas/Downloads/Pharmaceuticals.csv")
+view(Pharmaceuticals)
+```
+
+## a. Use only the numerical variables (1 to 9) to cluster the 21 firms. Justify the various choices made in conducting the cluster analysis, such as weights for different variables, the specific clustering algorithm(s) used, the number of clusters formed, and so on.
+
+```{r}
+##Create a new data frame 'A' by removing rows with missing values from 'Pharmaceuticals'
+A <- na.omit(Pharmaceuticals)
+##Generate a summary of the data in the 'A' data frame
+summary(A)
+
+```
+
+```{r}
+#Set row names of the data frame 'A' to the values in its first column
+row.names(A) <- A[,1]
+#Create a new data frame 'Pharma' containing columns 3 to 11 from 'A'
+Pharma <- A[,3:11]
+#Display the rows of the 'Pharma' data frame
+head(Pharma)
+```
+
+
+```{r}
+# Scale the data in the 'Pharma' data frame to standardize variables
+Pharma1 <- scale (Pharma)
+# Display the rows of the scaled 'Pharma1' data frame
+head(Pharma1)
+```
+```{r}
+# Visualize the Elbow Method for determining the optimal number of clusters (k) in k-means clustering and using the 'Pharma1' data and the "wss" (Within-Cluster Sum of Squares) method then Add a subtitle to the plot indicating it's the "Elbow Method."
+
+fviz_nbclust(Pharma1, kmeans, method = "wss") + labs(subtitle = "Elbow Method")
+
+```
+
+```{r}
+# Visualize the Silhouette Method for determining the optimal number of clusters (k) in k-means clustering and using the 'Pharma1' data and the "silhouette" method then Add a subtitle to the plot indicating it's the "Silhouette Method."
+
+fviz_nbclust(Pharma1, kmeans, method = "silhouette") + labs(subtitle = "silhouette Method")
+
+```
+
+
+```{r}
+# Set the seed for reproducibility at 64060
+set.seed(64060)
+
+# Perform k-means clustering with 5 clusters and 25 different starting points
+k5 <- kmeans(Pharma1, centers = 5, nstart = 25)
+
+# Display the cluster centers for the 5 clusters
+k5$centers
+
+```
+
+```{r}
+# Visualize the results of k-means clustering using the 'fviz_cluster' function.
+
+fviz_cluster(k5, data = Pharma1)
+```
+```{r}
+# Calculate the Euclidean distance matrix between observations in the 'Pharma1' dataset
+distance <- dist(Pharma1, method = "euclidean")
+
+# Visualizing the distance matrix using the 'fviz_dist' function
+fviz_dist(distance)
+```
+```{r}
+# Set the CRAN mirror to a specific location
+options(repos = c(CRAN = "https://cran.rstudio.com/"))
+```
+
+```{r}
+# Performing k-means clustering on the 'Pharma1' dataset to create 5 clusters
+fit <-kmeans(Pharma1, 5)
+
+# Calculate and aggregate the mean values of variables within each cluster
+aggregate(Pharma1, by = list(fit$cluster), FUN=mean)
+```
+
+```{r}
+# Create a new data frame 'Pharma2' by adding cluster assignments to 'Pharma1'
+Pharma2 <- data.frame(Pharma1, fit$cluster)
+Pharma2
+
+```
+```{r}
+
+# Create a cluster plot to visualize the clusters formed by k-means clustering
+clusplot(Pharma1, fit$cluster, color = TRUE, shade = FALSE, labels = 2, lines = 0)
+
+```
+
+## b. Interpret the clusters with respect to the numerical variables used in forming the clusters.
+
+#Among the companies that comprise Cluster 1 are #JNJ, MRK, PFE, and GSK; these companies have the largest market capitalizations and use financing to run their operations efficiently. (lower than 0.47 leverage).
+
+#Due to their lowest asset turnover and beta values, the stocks of Cluster 2 companies, AHM, WPI, and AVE, have the potential to outperform the current market benchmark.
+
+#They are the least capitalized company on the market, have the fastest revenue growth in Cluster 3, and are unable to even raise capital to support their operations. (MRX, CHTT, LVX, ELN). These business stocks' strong returns can be attributed in part to their high beta values.
+
+#Cluster 4: AGN, BAY, RHA Because of their highest expense to earnings ratio, they are the lowest earning. Additionally, their Return on Equity is less than 1, which suggests that it is unlikely that investing in these companies will yield the highest returns.
+
+#The group is composed of #Cluster-5 ABT, SGP, NVS, AZN, BMY, and WYE. They have the lowest rate of sales development, the highest asset turnover, and the highest net profit margin. These businesses are prospering as a result of their growth.
+
+## c. Is there a pattern in the clusters with respect to the numerical variables (10 to 12)? (those not used in forming the clusters)
+
+#The stocks in Cluster-1 have a mediocre personality; they are neither strong nor have they recently produced noteworthy returns.
+
+#The businesses in Cluster-2 are evenly distributed over the world. Despite their sound technical foundation, the media has largely embraced their concepts.
+
+#Cluster 3-Despite having a high leverage ratio, they are only moderately advised due to the security of their finances.
+
+#Shares in Group-4 The media claims that should be preserved because they will eventually turn into priceless assets.
+
+#Cluster No. 5: It is advised that companies having a high net profit margin stay in the cluster for a long time.
+
+## d. Provide an appropriate name for each cluster using any or all of the variables in the dataset.
+
+#Cluster 1: A workable strategy (since these are reputable stocks).
+
+#Cluster-2 is a collection of gold miners, despite their low beta, the market is very bullish on them.
+
+#The original configuration, or #Cluster-3 (stocks with solid financial and other fundamentals).
+
+#Cluster-4: The original setup (stocks with solid fundamentals, including financials).
+
+#cluster 5 is the recurring cluster. Adding the stocks to the portfolio is highly recommended because a significant net profit margin indicates that the business is performing well.
